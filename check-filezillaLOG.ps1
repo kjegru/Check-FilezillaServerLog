@@ -39,6 +39,7 @@ function reset-linecount {
 
 function set-lastfile {
 	$lastfile = $fzlog
+	write-host $lastfile
 	return $lastfile
 }
 
@@ -55,7 +56,7 @@ function find-logfilesize {
 
 function check-lineschanged {
 	# Checking if number of lines has changed
-	if($currlines.Lines -gt $line) {
+	if($currlines.Lines -gt $line -and ((gc $fzdir$fzlog) -gt $Null))  {
 		# If number of lines is more than last time - check the newest lines
 		(Get-Content (Get-Item $fzdir$fzlog))[$line .. $currlines.Lines]| foreach {
 			$word = $_.split(' ')
@@ -82,7 +83,6 @@ function send-message {
 	if($msglist -notlike $null){
 		#$postSlackMessage = @{token="notoken4ugetyerown";channel='compile-bot';as_user="false";icon_url="icon url";text=$msglist;username="jian-yang"}
 		#Invoke-RestMethod -Uri https://slack.com/api/chat.postMessage -Body $postSlackMessage
-		# Clearing the list
 		write-host $msglist
 	}
 	# Sleeping for X seconds so not to check all the time
