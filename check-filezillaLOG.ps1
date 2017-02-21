@@ -34,12 +34,12 @@ function reset-linecount {
 	if($lastfile -like '' -or $fzlog -notlike $lastfile) {
 			Write-Host 'New file. Reset line counter'
 			$line = 0
+			return $line
 	}	
 }
 
 function set-lastfile {
 	$lastfile = $fzlog
-	write-host $lastfile
 	return $lastfile
 }
 
@@ -74,9 +74,9 @@ function check-lineschanged {
 		return $msglist
 }
 
-function return-multiple {
-	$line = $args[0]
-	$msglist = $args[1]
+function set-lineno {
+	$line = $currlines.lines
+	return $line
 }
 
 function send-message {	
@@ -92,13 +92,18 @@ function send-message {
 while ($true) {
 	# Finding last changed logfile
 	$fzlog = Get-ChildItem $fzdir | Where-Object { ! $_.PSIsContainer } | Sort-Object lastwriteTime | Select-Object -last 1
-	# Doing the jobs
-	$line = reset-linecount
+	# Resetting line counter if new file
+	if($lastfile -like '' -or $fzlog -notlike $lastfile) {
+			Write-Host 'New file. Reset line counter'
+			$line = 0
+	}
+	# Doing the functions
 	$lastfile = set-lastfile
 	$currlines = find-logfilesize
 	$msglist = check-lineschanged
 	# Setting the line number for the next recursion and sending the array
-	$line = $currlines.Lines
+	$line = set-lineno
+	write-host $line
 	send-message
 	# Clearing the array
 	clear-variable -Name "msglist"
