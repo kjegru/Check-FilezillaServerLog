@@ -26,17 +26,20 @@
 $fzdir = 'C:\Program Files (x86)\FileZilla Server\Logs\'
 $line = 0
 $lastfile = ''
+$counter = 0
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
-function check-ifnewfile {
-	# Finding last changed logfile
-	$fzlog = Get-ChildItem $fzdir | Where-Object { ! $_.PSIsContainer } | Sort-Object lastwriteTime | Select-Object -last 1
+function reset-linecount {
 	write-host "checking if the file is new"
-	if($lastfile -like '' -or $fzdir+$fzlog -notlike $lastfile) {
+	if($lastfile -like '' -or $fzlog -notlike $lastfile) {
 			Write-Host 'New file. Reset line counter'
 			$line = 0
-	}
-		find-logfilesize
+	}	
+}
+
+function set-lastfile {
+	$lastfile = $fzlog
+	return $lastfile
 }
 
 function find-logfilesize {
@@ -46,7 +49,8 @@ function find-logfilesize {
 	# Finding the line number of the file
 	$currlines = Get-Content $fzdir$fzlog | Measure-Object -Line
 	Write-Host 'Number of lines in file: ' $currlines.Lines
-	check-lineschanged
+	return $currlines
+	
 }
 
 function check-lineschanged {
@@ -66,23 +70,37 @@ function check-lineschanged {
 		}
 	}
 		# Setting the value of the line numbers and filename for the next check.
-		$line = $currlines.Lines
-		$lastfile = $fzdir+$fzlog
-		send-message
+		return $msglist
 }
 
-function send-message {
+function return-multiple {
+	$line = $args[0]
+	$msglist = $args[1]
+}
 
-	
+function send-message {	
 	if($msglist -notlike $null){
-		$postSlackMessage = @{token="notoken4ugetyerown";channel='compile-bot';as_user="false";icon_url="icon url";text=$msglist;username="jian-yang"}
-		Invoke-RestMethod -Uri https://slack.com/api/chat.postMessage -Body $postSlackMessage
+		#$postSlackMessage = @{token="notoken4ugetyerown";channel='compile-bot';as_user="false";icon_url="icon url";text=$msglist;username="jian-yang"}
+		#Invoke-RestMethod -Uri https://slack.com/api/chat.postMessage -Body $postSlackMessage
 		# Clearing the list
-		clear-variable -Name "msglist"
+		write-host $msglist
 	}
 	# Sleeping for X seconds so not to check all the time
-	Start-Sleep -s 10
-	check-ifnewfile 
+	Start-Sleep -s 5
 }
 
-check-ifnewfile
+while ($true) {
+	# Finding last changed logfile
+	$fzlog = Get-ChildItem $fzdir | Where-Object { ! $_.PSIsContainer } | Sort-Object lastwriteTime | Select-Object -last 1
+	# Doing the jobs
+	$line = reset-linecount
+	$lastfile = set-lastfile
+	$currlines = find-logfilesize
+	$msglist = check-lineschanged
+	# Setting the line number for the next recursion and sending the array
+	$line = $currlines.Lines
+	send-message
+	# Clearing the array
+	clear-variable -Name "msglist"
+}
+
