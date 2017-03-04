@@ -1,4 +1,3 @@
-#requires -version 2
 <#
 .SYNOPSIS
   Goes through the FileZilla log file to check if file is uploaded and messages a person for each file.
@@ -14,7 +13,8 @@
   Version:        2.0
   Author:         Kjetil Grun
   Creation Date:  27.06.2016
-  Purpose/Change: Divided the different jobs into function and sent the new files noticed upload in one message.
+  Purpose/Change: Send a message to me everytime someone uploads something to FileZilla Server
+  Powershell Version: 5
   
 .EXAMPLE
   <Example goes here. Repeat this attribute for more than one example>
@@ -64,8 +64,7 @@ function check-lineschanged {
 			for($i=0; $i -le 6; $i++) {
 			  # Finding the word STOR which is the status code for stored file in FileZilla and adding it to an list 
 			  if($word[$i] -like 'STOR') {
-				#$msglist +=(,($word[$i+1]," is uploaded by ",$word[$i-1]," with IP: ",$word[$i-2]))	
-				$msglist +=($word[$i+1]+" is uploaded by "+$word[$i-1]+" with IP: "+$word[$i-2]+"`n")	
+				$msglist +=($word[$i+1]+" is uploaded by IP"+$word[$i-1]+" to site: "+$word[$i-2]+"`n")	
 			  }
 			}
 		}
